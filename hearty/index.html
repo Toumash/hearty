@@ -47,8 +47,29 @@
   </nav>
 
   <!-- Page Content -->
-  <div class="container" >
-
+  <div class="container">
+    <div class="">
+      <button id="subscribe" onclick="subscribe()">test</button>
+      <script>
+        addEventListener('load',async () =>{
+          if ('serviceWorker' in navigator) {
+            var sw = await navigator.serviceWorker.register('./sw.js');
+            console.log('service worker registered!',sw);
+          }else{
+            console.error('cannot register service worker. Unsupported browser!');
+          }
+        });
+        async function subscribe(){
+          console.log('xddd');
+          var sw = await navigator.serviceWorker.ready;
+          var push = await sw.pushManager.subscribe({
+            userVisibleOnly:true,
+            applicationServerKey: 'BI3k3FZmGDi5O_b2aZtPtQ6YCqVY_U8fOCuEJZtIdfIi7CU5-1E8oLLfjRo4vGx3C3sy3kjcn4b4eE2BWBDvxuA'
+          });
+          console.log(JSON.stringify(push));
+          // TODO: send the subscription info to the server
+        }
+      </script>
       <div class="col-lg-12 text-center">
         <h1 class="mt-5">Send love to the loved one</h1>
         <div>
