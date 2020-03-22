@@ -49,6 +49,7 @@
   <!-- Page Content -->
   <div class="container">
     <div class="">
+      <p id="server-time"></p>
       <button id="subscribe" onclick="subscribe()">test</button>
       <script>
         addEventListener('load',async () =>{
@@ -112,6 +113,16 @@
   <scriot src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
   <script src="js/plugins.js"></script>
   <script src="js/heart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = io();
+    let el;
+
+    socket.on('time', (timeString) => {
+      el = document.getElementById('server-time');
+      el.innerHTML = 'Server time: ' + timeString;
+    });
+  </script>
 
   <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
   <script>
