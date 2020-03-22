@@ -8,7 +8,17 @@ This app for lovers has only one goal: to make each other happier by telling the
 
 ## Tech stack
 
-- aspnet core 3
-- signalr
-- mysql
+- nodejs
+- socket.io
+- mongodb - atlas
 - web service workers
+- heroku
+
+
+## Deployment How to
+
+```
+heroku create
+heroku features:enable http-session-affinity
+git push heroku master
+```
