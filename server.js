@@ -19,8 +19,8 @@ async function connectToDatabase(uri) {
 }
 
 const PORT = process.env.PORT || 3000;
-
 const server = express()
+  .set('view engine', 'ejs')
   .use('/api/healthz/readiness',(req,res)=>{
     res.status(200).json({ status:'ok'})
   })
@@ -30,6 +30,9 @@ const server = express()
     const collection = await db.collection('users')
     const users = await collection.find({}).toArray()
     res.status(200).json({ users })
+  })
+  .get('/template-test',(req,res)=>{
+    res.render('pages/index',{test:'123'})
   })
   .use(express.static('public'))
   .listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`));
