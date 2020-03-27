@@ -64,10 +64,10 @@
         <input type="text"  placeholder="To:" id="fname" name="fname" size="7"><br><br>
       </form>
     </div>
-        <div id="emptyHeart" style="text-align:center">
+        <div id="emptyHeart" class="filled" style="text-align:center">
           <span class="center">
           <svg id="heart1" viewBox="0 0 100 100" width="300" height="300" xmlns="http://www.w3.org/2000/svg">
-            <path id="heartShape" style="fill:none";  stroke="red"
+            <path id="heartShape" stroke="red"
               d="M 10,30
                  A 20,20 0,0,1 50,30
                  A 20,20 0,0,1 90,30
@@ -75,10 +75,8 @@
                  Q 10,60 10,30 z" />
           </svg>
         </span>
-
-        <button onclick="heartShape.style.fill='red';">Send love</button>
+        <button onclick="heartShape.classList.toggle('hoveron')">Send love</button>
       </form>
-
         </div>
       </div>
     </div>

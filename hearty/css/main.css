@@ -273,7 +273,17 @@ emptyHeart {
   justify-content: center;
 }
 
-svg{
+svg {
   display: block;
   margin: auto;
+}
+
+#heartShape {
+  transition: fill 1s ease;
+}
+#heart1 path {
+  fill: white;
+}
+#heart1 .hoveron {
+  fill: red;
 }
