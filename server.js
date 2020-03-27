@@ -3,6 +3,7 @@
 const MongoClient = require('mongodb').MongoClient;
 const express = require('express');
 const socketIO = require('socket.io');
+require('dotenv').config({ path: `.env.${process.env.NODE_ENV}` })
 
 
 let cachedDb = null
@@ -24,6 +25,7 @@ const server = express()
     res.status(200).json({ status:'ok'})
   })
   .use('/api/users',async (req,res)=>{
+    console.log(process.env.MONGODB_URI);
     const db = await connectToDatabase(process.env.MONGODB_URI)
     const collection = await db.collection('users')
     const users = await collection.find({}).toArray()
