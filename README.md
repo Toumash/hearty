@@ -14,6 +14,12 @@ This app for lovers has only one goal: to make each other happier by telling the
 - web service workers
 - heroku
 
+## How to run?
+
+```
+npm install
+npm start
+```
 
 ## Deployment How to
 
