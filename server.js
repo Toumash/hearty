@@ -32,7 +32,7 @@ const server = express()
     res.status(200).json({ users })
   })
   .use(express.static('public'))
-  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+  .listen(PORT, () => console.log(`Server started on http://localhost:${PORT}`));
 
 const io = socketIO(server);
 
