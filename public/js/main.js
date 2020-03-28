@@ -25,3 +25,6 @@ async function subscribeToNotifications(webpush_key) {
     );
   }
 }
+
+let socket = io();
+socket.on('time', (timeString) => { });
