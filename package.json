@@ -6,19 +6,21 @@
     "type": "git",
     "url": "https://github.com/Toumash/hearty.git"
   },
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cookie-parser": "^1.4.5",
     "dotenv": "^8.2.0",
     "ejs": "^3.0.1",
     "express": "^4.17.1",
     "mongodb": "^3.5.5",
     "socket.io": "^2.3.0",
+    "uuid": "^7.0.2",
     "web-push": "^3.4.3"
   }
 }
