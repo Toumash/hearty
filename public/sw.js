@@ -1,7 +1,7 @@
 self.addEventListener('push',function (e){
   const options = {
-        body: 'New heart notification!',
-        icon: 'heart.png',
+        body: 'New message from your partner!',
+        icon: 'https://localhost:7000/heart.png',
         vibrate: [100, 50, 100],
         data: {
           dateOfArrival: Date.now(),
@@ -13,7 +13,7 @@ self.addEventListener('push',function (e){
         ]
       };
       e.waitUntil(
-        self.registration.showNotification('Hearty', options)
+        self.registration.showNotification('Hearty ❤️', options)
       );
 });
 
