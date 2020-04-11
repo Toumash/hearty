@@ -57,23 +57,42 @@ const server = express()
 
     let user = getUser(req);
     user.inviteCode = inviteCode;
-    res.json({ inviteLink: inviteLink }).end();
+    res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
+  })
+  .post('/api/user/pair', (req, res) => {
+    if (!getUser(req)) { return res.status(401).end(); }
+    let currentUser = getUser(req);
+    let currentUserId = getUserId(req);
+    let invitationCode = req.query.invitationCode;
+
+    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (userId == null) {
+      res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
+      return;
+    }
+    db.user[userId].partnerId = currentUserId;
+    currentUser.partnerId = userId;
+    // TOOD: signalr emit paired event
+    res.status(201).json({ status: 'ok' }).end();
   })
   .get('/user/accept-invite/:invitationCode', (req, res) => {
     let invitationCode = req.params.invitationCode;
     let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
     if (userId == null) {
       res.status(404)
-        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' });
+        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
+        .end();
+      return;
     }
 
     res.status(200).json({ status: 'ok', message: 'NOT IMPLEMENTED. THERE SHOULD BE FRONTEND HERE' })
+      .end()
     console.log(invitationCode);
     // TODO: frontend page render
   })
   .post("/api/user", (req, res) => {
-    if (!db.user[getUserId(req)])
-      db.user[getUserId(req)] = { subscription: req.body };
+    // if (!db.user[getUserId(req)])
+    db.user[getUserId(req)] = { subscription: req.body, inviteCode: null, partnerId: null };
     res.status(201).end();
   })
   .get("/api/user", async (req, res) => {
