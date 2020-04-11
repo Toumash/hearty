@@ -11,6 +11,8 @@ let environment = process.env.NODE_ENV || "dev";
 require("dotenv").config({ path: `.env.${environment}` });
 
 const PORT = process.env.PORT || 3000;
+const PUBLIC_URL = "http://localhost:" + PORT;
+
 push.setVapidDetails(
   "mailto:hearty@example.com",
   process.env.VAPID_PUB,
@@ -30,7 +32,7 @@ async function connectToDatabase(uri) {
   return db;
 }
 
-let subscriptions = {};
+let subscriptions = { "test": { inviteCode: 'MDdiODFiYjMtZGU3Ni00NDg2LWJjYTMtYWI0Y2Y5OTFkNmY3' } };
 
 const server = express()
   .use(express.json())
@@ -39,9 +41,27 @@ const server = express()
   .use("/api/healthz/readiness", (req, res) => {
     res.status(200).json({ status: "ok" });
   })
+  .get('/api/subscription/invite-link', (req, res) => {
+    if (!subscriptions[req.cookies.user]) {
+      res.status(401).json('no cookie').end();
+      return;
+    }
+
+    let inviteCode = '';
+    if (!subscriptions[req.cookies.user].inviteCode)
+      inviteCode = Buffer.from(uuid.v4()).toString('base64');
+    else
+      inviteCode = subscriptions[req.cookies.user].inviteCode;
+
+    let inviteLink = PUBLIC_URL + '/accept-invite?code=' + inviteCode;
+
+    let user = subscriptions[req.cookies.user];
+    user.inviteCode = inviteCode;
+    res.json({ inviteLink: inviteLink }).end();
+  })
   .post("/api/subscription", (req, res) => {
-    if (!subscriptions[req.cookies.user.id])
-      subscriptions[req.cookies.user.id] = { subscription: req.body };
+    if (!subscriptions[req.cookies.user])
+      subscriptions[req.cookies.user] = { subscription: req.body };
     res.status(201).end();
   })
   .get("/api/subscription", (req, res) => {
@@ -56,23 +76,17 @@ const server = express()
   .get("/", (req, res) => {
     let user = req.cookies.user;
     if (!user) {
-      user = { id: uuid.v4() };
+      user = uuid.v4();
       res.cookie("user", user);
     }
     res.render("pages/index", {
-      userId: user.id,
+      userId: user,
       webpush_key: process.env.VAPID_PUB
     });
   })
-
   .get("/receive-love", (req, res) => {
-    let user = req.cookies.user;
-    if (!user) {
-      user = { id: uuid.v4() };
-      res.cookie("user", user);
-    }
     res.render("pages/receive-love", {
-      userId: user.id,
+      userId: req.cookies.user,
       webpush_key: process.env.VAPID_PUB
     });
   })
