@@ -31,8 +31,11 @@ async function connectToDatabase(uri) {
   cachedDb = db;
   return db;
 }
+const guid = () => uuid.v4();
 
-let subscriptions = { "test": { inviteCode: 'MDdiODFiYjMtZGU3Ni00NDg2LWJjYTMtYWI0Y2Y5OTFkNmY3' } };
+let db = { user: {}};
+const getUserId = (req) => req.cookies.user;
+const getUser = (req) => db.user[getUserId(req)];
 
 const server = express()
   .use(express.json())
@@ -42,41 +45,39 @@ const server = express()
     res.status(200).json({ status: "ok" });
   })
   .get('/api/subscription/invite-link', (req, res) => {
-    if (!subscriptions[req.cookies.user]) {
-      res.status(401).json('no cookie').end();
-      return;
-    }
+    if (!getUser(req)) { return res.status(401).end(); }
 
     let inviteCode = '';
-    if (!subscriptions[req.cookies.user].inviteCode)
-      inviteCode = Buffer.from(uuid.v4()).toString('base64');
+    if (!getUser(req).inviteCode)
+      inviteCode = Buffer.from(guid()).toString('base64');
     else
-      inviteCode = subscriptions[req.cookies.user].inviteCode;
+      inviteCode = getUser(req).inviteCode;
 
     let inviteLink = PUBLIC_URL + '/accept-invite?code=' + inviteCode;
 
-    let user = subscriptions[req.cookies.user];
+    let user = getUser(req);
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink }).end();
   })
-  .post("/api/subscription", (req, res) => {
-    if (!subscriptions[req.cookies.user])
-      subscriptions[req.cookies.user] = { subscription: req.body };
+  .post("/api/user", (req, res) => {
+    if (!db.user[getUserId(req)])
+      db.user[getUserId(req)] = { subscription: req.body };
     res.status(201).end();
   })
-  .get("/api/subscription", (req, res) => {
-    res.json(subscriptions);
-  })
-  .use("/api/users", async (req, res) => {
+  .get("/api/user", async (req, res) => {
     const db = await connectToDatabase(process.env.MONGODB_URI);
     const collection = await db.collection("users");
     const users = await collection.find({}).toArray();
     res.status(200).json({ users });
   })
+  .get("/api/db", (req, res) => {
+    if (!getUser(req)) { return res.status(401).end(); }
+    res.json(db);
+  })
   .get("/", (req, res) => {
     let user = req.cookies.user;
     if (!user) {
-      user = uuid.v4();
+      user = guid();
       res.cookie("user", user);
     }
     res.render("pages/index", {

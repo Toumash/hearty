@@ -12,7 +12,7 @@ async function subscribeToNotifications(webpush_key) {
     userVisibleOnly: true,
     applicationServerKey: webpush_key
   });
-  fetch("/api/subscription", {
+  fetch("/api/user", {
     method: "POST",
     body: JSON.stringify(push),
     headers: { "Content-Type": "application/json" }
