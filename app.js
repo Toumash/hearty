@@ -64,6 +64,19 @@ const server = express()
       webpush_key: process.env.VAPID_PUB
     });
   })
+
+  .get("/receive-love", (req, res) => {
+    let user = req.cookies.user;
+    if (!user) {
+      user = { id: uuid.v4() };
+      res.cookie("user", user);
+    }
+    res.render("pages/receive-love", {
+      userId: user.id,
+      webpush_key: process.env.VAPID_PUB
+    });
+  })
+
   .use(express.static("public"))
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
 
