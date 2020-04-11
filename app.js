@@ -29,8 +29,11 @@ async function connectToDatabase(uri) {
   cachedDb = db;
   return db;
 }
+const guid = () => uuid.v4();
 
-let subscriptions = {};
+let db = { users: {}, invitation: {} };
+const getUserId = (req) => req.cookies.user.id;
+const checkAuth = (req) => db.users[getUserId(req)];
 
 const server = express()
   .use(express.json())
@@ -40,14 +43,31 @@ const server = express()
     res.status(200).json({ status: "ok" });
   })
   .post("/api/subscription", (req, res) => {
-    if (!subscriptions[req.cookies.user.id])
-      subscriptions[req.cookies.user.id] = { subscription: req.body };
+    if (!db.users[getUserId(req)])
+      db.users[getUserId(req)] = { subscription: req.body };
     res.status(201).end();
   })
-  .get("/api/subscription", (req, res) => {
-    res.json(subscriptions);
+  .post("/api/invitation", (req, res) => {
+    if (!checkAuth(req)) return res.status(401).end();
+
+    let inviteId = guid();
+    let invite = { inviteId: inviteId, userId: getUserId(req) };
+    db.invitation.push(invite);
+    res.status(201).json(invite).end();
   })
-  .use("/api/users", async (req, res) => {
+  .get("/api/database", (req, res) => {
+    if(!checkAuth(req)) { return res.status(401).end();}
+    res.json(db);
+  })
+  .post('/api/user',(req,res)=>{
+    let user = req.cookies.user;
+    if (!user) {
+      user = { id: guid() };
+      res.cookie("user", user);
+    }
+    res.status(201).json(user).end();
+  })
+  .use("/api/user", async (req, res) => {
     const db = await connectToDatabase(process.env.MONGODB_URI);
     const collection = await db.collection("users");
     const users = await collection.find({}).toArray();
@@ -56,7 +76,7 @@ const server = express()
   .get("/", (req, res) => {
     let user = req.cookies.user;
     if (!user) {
-      user = { id: uuid.v4() };
+      user = { id: guid() };
       res.cookie("user", user);
     }
     res.render("pages/index", {
