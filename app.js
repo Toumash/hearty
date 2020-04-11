@@ -33,7 +33,7 @@ async function connectToDatabase(uri) {
 }
 const guid = () => uuid.v4();
 
-let db = { user: {}};
+let db = { user: {} };
 const getUserId = (req) => req.cookies.user;
 const getUser = (req) => db.user[getUserId(req)];
 
@@ -44,7 +44,7 @@ const server = express()
   .use("/api/healthz/readiness", (req, res) => {
     res.status(200).json({ status: "ok" });
   })
-  .get('/api/subscription/invite-link', (req, res) => {
+  .get('/api/user/invite-link', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
 
     let inviteCode = '';
@@ -53,11 +53,23 @@ const server = express()
     else
       inviteCode = getUser(req).inviteCode;
 
-    let inviteLink = PUBLIC_URL + '/accept-invite?code=' + inviteCode;
+    let inviteLink = PUBLIC_URL + '/user/accept-invite/' + inviteCode;
 
     let user = getUser(req);
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink }).end();
+  })
+  .get('/user/accept-invite/:invitationCode', (req, res) => {
+    let invitationCode = req.params.invitationCode;
+    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (userId == null) {
+      res.status(404)
+        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' });
+    }
+
+    res.status(200).json({ status: 'ok', message: 'NOT IMPLEMENTED. THERE SHOULD BE FRONTEND HERE' })
+    console.log(invitationCode);
+    // TODO: frontend page render
   })
   .post("/api/user", (req, res) => {
     if (!db.user[getUserId(req)])
