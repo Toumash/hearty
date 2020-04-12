@@ -11,6 +11,8 @@ let environment = process.env.NODE_ENV || "dev";
 require("dotenv").config({ path: `.env.${environment}` });
 
 const PORT = process.env.PORT || 3000;
+const PUBLIC_URL = "http://localhost:" + PORT;
+
 push.setVapidDetails(
   "mailto:hearty@example.com",
   process.env.VAPID_PUB,
@@ -29,8 +31,11 @@ async function connectToDatabase(uri) {
   cachedDb = db;
   return db;
 }
+const guid = () => uuid.v4();
 
-let subscriptions = {};
+let db = { user: {} };
+const getUserId = (req) => req.cookies.user;
+const getUser = (req) => db.user[getUserId(req)];
 
 const server = express()
   .use(express.json())
@@ -39,40 +44,81 @@ const server = express()
   .use("/api/healthz/readiness", (req, res) => {
     res.status(200).json({ status: "ok" });
   })
-  .post("/api/subscription", (req, res) => {
-    if (!subscriptions[req.cookies.user.id])
-      subscriptions[req.cookies.user.id] = { subscription: req.body };
+  .get('/api/user/invite-link', (req, res) => {
+    if (!getUser(req)) { return res.status(401).end(); }
+
+    let inviteCode = '';
+    if (!getUser(req).inviteCode)
+      inviteCode = Buffer.from(guid()).toString('base64');
+    else
+      inviteCode = getUser(req).inviteCode;
+
+    let inviteLink = PUBLIC_URL + '/user/accept-invite/' + inviteCode;
+
+    let user = getUser(req);
+    user.inviteCode = inviteCode;
+    res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
+  })
+  .post('/api/user/pair', (req, res) => {
+    if (!getUser(req)) { return res.status(401).end(); }
+    let currentUser = getUser(req);
+    let currentUserId = getUserId(req);
+    let invitationCode = req.query.invitationCode;
+
+    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (userId == null) {
+      res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
+      return;
+    }
+    db.user[userId].partnerId = currentUserId;
+    currentUser.partnerId = userId;
+    // TOOD: signalr emit paired event
+    res.status(201).json({ status: 'ok' }).end();
+  })
+  .get('/user/accept-invite/:invitationCode', (req, res) => {
+    let invitationCode = req.params.invitationCode;
+    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (userId == null) {
+      res.status(404)
+        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
+        .end();
+      return;
+    }
+
+    res.status(200).json({ status: 'ok', message: 'NOT IMPLEMENTED. THERE SHOULD BE FRONTEND HERE' })
+      .end()
+    console.log(invitationCode);
+    // TODO: frontend page render
+  })
+  .post("/api/user", (req, res) => {
+    // if (!db.user[getUserId(req)])
+    db.user[getUserId(req)] = { subscription: req.body, inviteCode: null, partnerId: null };
     res.status(201).end();
   })
-  .get("/api/subscription", (req, res) => {
-    res.json(subscriptions);
-  })
-  .use("/api/users", async (req, res) => {
+  .get("/api/user", async (req, res) => {
     const db = await connectToDatabase(process.env.MONGODB_URI);
     const collection = await db.collection("users");
     const users = await collection.find({}).toArray();
     res.status(200).json({ users });
   })
+  .get("/api/db", (req, res) => {
+    if (!getUser(req)) { return res.status(401).end(); }
+    res.json(db);
+  })
   .get("/", (req, res) => {
     let user = req.cookies.user;
     if (!user) {
-      user = { id: uuid.v4() };
+      user = guid();
       res.cookie("user", user);
     }
     res.render("pages/index", {
-      userId: user.id,
+      userId: user,
       webpush_key: process.env.VAPID_PUB
     });
   })
-
   .get("/receive-love", (req, res) => {
-    let user = req.cookies.user;
-    if (!user) {
-      user = { id: uuid.v4() };
-      res.cookie("user", user);
-    }
     res.render("pages/receive-love", {
-      userId: user.id,
+      userId: req.cookies.user,
       webpush_key: process.env.VAPID_PUB
     });
   })
