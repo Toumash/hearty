@@ -87,7 +87,8 @@ const server = express()
 
     res.render("pages/accept-invite", {
       userId: req.cookies.user,
-      webpush_key: process.env.VAPID_PUB
+      webpush_key: process.env.VAPID_PUB,
+      invitationCode: invitationCode
     });
   })
   .post("/api/user", (req, res) => {

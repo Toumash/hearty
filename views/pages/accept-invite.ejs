@@ -57,7 +57,7 @@
   
       <div class="col-lg-12 text-center">
         <h4 class="mt-5"> Connect with your partner</h4>
-        <button id="accept" onclick="acceptInvite()">Accept invitation</button>
+        <button id="accept" onclick="acceptInvite('<%= invitationCode %>')">Accept invitation</button>
         <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
       <div id="nameInput" style="text-align:center">
         <form action="/action_page.php">
@@ -90,6 +90,18 @@
     ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
   </script>
   <script src="https://www.google-analytics.com/analytics.js" async></script>
+
+  <script>
+async function acceptInvite(invitationCode){
+
+const response = await fetch('/api/accept-invite/'+ invitationCode, {
+  method: 'POST'
+});
+// location.href = "/receive-love"  
+}
+
+
+  </script>
 </body>
 
 </html>
