@@ -53,19 +53,18 @@
   <!-- Page Content -->
   <div class="container">
     <div class="">
-      <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
+    
+  
       <div class="col-lg-12 text-center">
-        <h4 class="mt-5"> Your partner has just sent you love symbol!</h4>
-     
-      <p>&hearts; <p>
-   
+        <h4 class="mt-5"> Connect with your partner</h4>
+        <button id="accept" onclick="acceptInvite()">Accept invitation</button>
+        <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
       <div id="nameInput" style="text-align:center">
         <form action="/action_page.php">
           <label for="fname"></label>
         </form>
       </div>
 
-        <button onclick="heartShape.classList.toggle('hoveron')">Send love back</button>
         </form>
       </div>
     </div>

@@ -54,6 +54,8 @@
   <div class="container">
     <div class="">
       <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
+      <button id="generateLink" onclick="generateLink()">Generate invite link</button>
+      <p>Invitation link: <span id="inviteCode"></span></p>
       <div class="col-lg-12 text-center">
         <h1 class="mt-5">Send love to the loved one</h1>
       </div>
@@ -73,7 +75,7 @@
                  Q 10,60 10,30 z" />
           </svg>
         </span>
-        <button onclick="heartShape.classList.toggle('hoveron')">Send love</button>
+        <button onclick="heartShape.classList.toggle('hoveron');sendLove();">Send love</button>
         </form>
       </div>
     </div>
@@ -98,6 +100,22 @@
     ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
   </script>
   <script src="https://www.google-analytics.com/analytics.js" async></script>
+
+<script>
+async function generateLink(){
+  const response = await fetch('/api/user/invite-link');
+  const myJson = await response.json();
+  const inviteCode = myJson.inviteLink;
+  console.log(inviteCode);
+  document.getElementById("inviteCode").innerHTML = inviteCode;
+}
+
+async function sendLove(){
+  const response = await fetch('/api/send-love');
+}
+
+</script>
+
 </body>
 
 </html>

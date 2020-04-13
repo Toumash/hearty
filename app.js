@@ -85,10 +85,10 @@ const server = express()
       return;
     }
 
-    res.status(200).json({ status: 'ok', message: 'NOT IMPLEMENTED. THERE SHOULD BE FRONTEND HERE' })
-      .end()
-    console.log(invitationCode);
-    // TODO: frontend page render
+    res.render("pages/accept-invite", {
+      userId: req.cookies.user,
+      webpush_key: process.env.VAPID_PUB
+    });
   })
   .post("/api/user", (req, res) => {
     // if (!db.user[getUserId(req)])
@@ -122,7 +122,6 @@ const server = express()
       webpush_key: process.env.VAPID_PUB
     });
   })
-
   .use(express.static("public"))
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
 
@@ -134,3 +133,4 @@ io.on("connection", socket => {
 });
 
 setInterval(() => io.emit("time", new Date().toTimeString()), 1000);
+
