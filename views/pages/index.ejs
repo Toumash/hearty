@@ -53,7 +53,8 @@
   <!-- Page Content -->
   <div class="container">
     <div class="">
-      <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
+      <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to
+        notifications</button>
       <button id="generateLink" onclick="generateLink()">Generate invite link</button>
       <p>Invitation link: <span id="inviteCode"></span></p>
       <div class="col-lg-12 text-center">
@@ -101,20 +102,20 @@
   </script>
   <script src="https://www.google-analytics.com/analytics.js" async></script>
 
-<script>
-async function generateLink(){
-  const response = await fetch('/api/user/invite-link');
-  const myJson = await response.json();
-  const inviteCode = myJson.inviteLink;
-  console.log(inviteCode);
-  document.getElementById("inviteCode").innerHTML = inviteCode;
-}
+  <script>
+    async function generateLink() {
+      const response = await fetch('/api/user/invite-link');
+      const myJson = await response.json();
+      const inviteCode = myJson.inviteLink;
+      console.log(inviteCode);
+      document.getElementById("inviteCode").innerHTML = inviteCode;
+    }
 
-async function sendLove(){
-  const response = await fetch('/api/send-love');
-}
+    async function sendLove() {
+      const response = await fetch('/api/send-love', { method: 'POST' });
+    }
 
-</script>
+  </script>
 
 </body>
 

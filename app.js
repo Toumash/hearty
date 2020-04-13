@@ -41,8 +41,16 @@ const server = express()
   .use(express.json())
   .set("view engine", "ejs")
   .use(cookieParser())
-  .use("/api/healthz/readiness", (req, res) => {
+  .get("/api/healthz/readiness", (req, res) => {
     res.status(200).json({ status: "ok" });
+  })
+  .use(function (req, res, next) {
+    let user = req.cookies.user;
+    if (!user) {
+      user = guid();
+      res.cookie("user", user);
+    }
+    next()
   })
   .get('/api/user/invite-link', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
