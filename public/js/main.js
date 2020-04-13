@@ -12,6 +12,7 @@ async function subscribeToNotifications(webpush_key) {
     userVisibleOnly: true,
     applicationServerKey: webpush_key
   });
+  console.log(push);
   fetch("/api/user", {
     method: "POST",
     body: JSON.stringify(push),

@@ -62,16 +62,22 @@ const server = express()
   .post('/api/user/pair', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
     let currentUser = getUser(req);
+    console.log('hello,', currentUser)
     let currentUserId = getUserId(req);
     let invitationCode = req.query.invitationCode;
 
-    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
-    if (userId == null) {
+    if (currentUser.inviteCode == invitationCode) {
+      res.status(500).json({ status: 'error', message: 'invalid action. You can\'t invite yourself' }).end();
+      return;
+    }
+
+    let partnerUserId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (partnerUserId == null) {
       res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
       return;
     }
-    db.user[userId].partnerId = currentUserId;
-    currentUser.partnerId = userId;
+    db.user[partnerUserId].partnerId = currentUserId;
+    currentUser.partnerId = partnerUserId;
     // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
   })
@@ -102,7 +108,7 @@ const server = express()
     res.status(200).json({ users });
   })
   .get("/api/db", (req, res) => {
-    if (!getUser(req)) { return res.status(401).end(); }
+    //if (!getUser(req)) { return res.status(401).end(); }
     res.json(db);
   })
   .get("/", (req, res) => {
@@ -115,6 +121,14 @@ const server = express()
       userId: user,
       webpush_key: process.env.VAPID_PUB
     });
+  })
+  .post('/api/send-love', (req, res) => {
+    let user = getUser(req);
+    if (!user) { return res.status(401).end(); }
+    let partner = db.user[user.partnerId];
+    let pushNotifySubscriptionKeys = partner.subscription;
+    push.sendNotification(pushNotifySubscriptionKeys);
+    res.status(201).json({ status: 'ok', description: 'message sent!' }).end();
   })
   .get("/receive-love", (req, res) => {
     res.render("pages/receive-love", {
