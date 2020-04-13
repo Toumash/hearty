@@ -41,8 +41,16 @@ const server = express()
   .use(express.json())
   .set("view engine", "ejs")
   .use(cookieParser())
-  .use("/api/healthz/readiness", (req, res) => {
+  .get("/api/healthz/readiness", (req, res) => {
     res.status(200).json({ status: "ok" });
+  })
+  .use(function (req, res, next) {
+    let user = req.cookies.user;
+    if (!user) {
+      user = guid();
+      res.cookie("user", user);
+    }
+    next()
   })
   .get('/api/user/invite-link', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
@@ -59,12 +67,12 @@ const server = express()
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
   })
-  .post('/api/user/pair', (req, res) => {
+  .post('/api/accept-invite/:invitationCode', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
     let currentUser = getUser(req);
     console.log('hello,', currentUser)
     let currentUserId = getUserId(req);
-    let invitationCode = req.query.invitationCode;
+    let invitationCode = req.params.invitationCode;
 
     if (currentUser.inviteCode == invitationCode) {
       res.status(500).json({ status: 'error', message: 'invalid action. You can\'t invite yourself' }).end();
@@ -91,10 +99,11 @@ const server = express()
       return;
     }
 
-    res.status(200).json({ status: 'ok', message: 'NOT IMPLEMENTED. THERE SHOULD BE FRONTEND HERE' })
-      .end()
-    console.log(invitationCode);
-    // TODO: frontend page render
+    res.render("pages/accept-invite", {
+      userId: req.cookies.user,
+      webpush_key: process.env.VAPID_PUB,
+      invitationCode: invitationCode
+    });
   })
   .post("/api/user", (req, res) => {
     // it will always overwrite prevous subscription
@@ -138,7 +147,6 @@ const server = express()
       webpush_key: process.env.VAPID_PUB
     });
   })
-
   .use(express.static("public"))
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
 
@@ -150,3 +158,4 @@ io.on("connection", socket => {
 });
 
 setInterval(() => io.emit("time", new Date().toTimeString()), 1000);
+
