@@ -59,12 +59,12 @@ const server = express()
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
   })
-  .post('/api/user/pair', (req, res) => {
+  .post('/api/accept-invite/:invitationCode', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
     let currentUser = getUser(req);
     console.log('hello,', currentUser)
     let currentUserId = getUserId(req);
-    let invitationCode = req.query.invitationCode;
+    let invitationCode = req.params.invitationCode;
 
     if (currentUser.inviteCode == invitationCode) {
       res.status(500).json({ status: 'error', message: 'invalid action. You can\'t invite yourself' }).end();

@@ -1,6 +1,6 @@
 addEventListener("load", async () => {
   if ("serviceWorker" in navigator) {
-    var sw = await navigator.serviceWorker.register("./sw.js");
+    var sw = await navigator.serviceWorker.register("/sw.js");
     console.log("service worker registered!", sw);
   } else {
     console.error("cannot register service worker. Unsupported browser!");
