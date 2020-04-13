@@ -97,8 +97,10 @@ const server = express()
     // TODO: frontend page render
   })
   .post("/api/user", (req, res) => {
-    // if (!db.user[getUserId(req)])
-    db.user[getUserId(req)] = { subscription: req.body, inviteCode: null, partnerId: null };
+    // it will always overwrite prevous subscription
+    let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };
+    user.subscription = req.body;
+    db.user[getUserId(req)] = user;
     res.status(201).end();
   })
   .get("/api/user", async (req, res) => {
@@ -108,7 +110,7 @@ const server = express()
     res.status(200).json({ users });
   })
   .get("/api/db", (req, res) => {
-    //if (!getUser(req)) { return res.status(401).end(); }
+    if (!getUser(req)) { return res.status(401).end(); }
     res.json(db);
   })
   .get("/", (req, res) => {
