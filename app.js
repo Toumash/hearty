@@ -62,16 +62,22 @@ const server = express()
   .post('/api/user/pair', (req, res) => {
     if (!getUser(req)) { return res.status(401).end(); }
     let currentUser = getUser(req);
+    console.log('hello,', currentUser)
     let currentUserId = getUserId(req);
     let invitationCode = req.query.invitationCode;
 
-    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
-    if (userId == null) {
+    if (currentUser.inviteCode == invitationCode) {
+      res.status(500).json({ status: 'error', message: 'invalid action. You can\'t invite yourself' }).end();
+      return;
+    }
+
+    let partnerUserId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (partnerUserId == null) {
       res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
       return;
     }
-    db.user[userId].partnerId = currentUserId;
-    currentUser.partnerId = userId;
+    db.user[partnerUserId].partnerId = currentUserId;
+    currentUser.partnerId = partnerUserId;
     // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
   })
@@ -91,8 +97,10 @@ const server = express()
     // TODO: frontend page render
   })
   .post("/api/user", (req, res) => {
-    // if (!db.user[getUserId(req)])
-    db.user[getUserId(req)] = { subscription: req.body, inviteCode: null, partnerId: null };
+    // it will always overwrite prevous subscription
+    let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };
+    user.subscription = req.body;
+    db.user[getUserId(req)] = user;
     res.status(201).end();
   })
   .get("/api/user", async (req, res) => {
@@ -115,6 +123,14 @@ const server = express()
       userId: user,
       webpush_key: process.env.VAPID_PUB
     });
+  })
+  .post('/api/send-love', (req, res) => {
+    let user = getUser(req);
+    if (!user) { return res.status(401).end(); }
+    let partner = db.user[user.partnerId];
+    let pushNotifySubscriptionKeys = partner.subscription;
+    push.sendNotification(pushNotifySubscriptionKeys);
+    res.status(201).json({ status: 'ok', description: 'message sent!' }).end();
   })
   .get("/receive-love", (req, res) => {
     res.render("pages/receive-love", {
