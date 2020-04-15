@@ -14,11 +14,18 @@ const PUBLIC_URL = "http://localhost:" + PORT;
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
 
-let db = { user: { "test": { subscription: {} } } };
+let db = { user: { "test": { subscription: {},partnerId:'alicja'} } };
 const getUserId = (req) => req.cookies.user;
 const getUser = (req) => db.user[getUserId(req)];
 const guid = () => uuid.v4();
-const auth = (req, res, next) => { if (!getUser(req)) { return res.status(401).end(); } next() }
+const auth = (req, res, next) => {
+  let user = getUser(req);
+  if (!user) {
+    return res.status(401).end();
+  }
+  res.locals.user = user;
+  next();
+}
 
 const server = express()
   .use(express.json())
@@ -61,8 +68,14 @@ const server = express()
     }
     db.user[partnerUserId].partnerId = currentUserId;
     currentUser.partnerId = partnerUserId;
-    // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
+  }])
+  .get('/api/partner', [auth, (req, res) => {
+    let partnerId = res.locals.user.partnerId;
+    if (partnerId != null) {
+      return res.status(200).json({ status: 'ok', message: 'partner found!' }).end();
+    } else
+      return res.status(404).json({ status: 'error', message: 'partner not found' }).end();
   }])
   .post("/api/user", (req, res) => {
     // it will always overwrite prevous subscription
