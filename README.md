@@ -1,4 +1,4 @@
-# Hearty ❤
+# Hearty ❤ ![Heroku](https://pyheroku-badge.herokuapp.com/?app=hearty-app&style=flat-square)
 
 
 ##  Goal
