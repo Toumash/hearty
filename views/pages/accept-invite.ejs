@@ -57,8 +57,8 @@
   
       <div class="col-lg-12 text-center">
         <h4 class="mt-5"> Connect with your partner</h4>
-        <button id="accept" onclick="acceptInvite('<%= invitationCode %>')">Accept invitation</button>
-        <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to notifications</button>
+        <button id="accept" onclick="subscribeToNotifications('<%= webpush_key %>', '<%= invitationCode %>')">Accept invitation</button>
+       
       <div id="nameInput" style="text-align:center">
         <form action="/action_page.php">
           <label for="fname"></label>
@@ -92,15 +92,34 @@
   <script src="https://www.google-analytics.com/analytics.js" async></script>
 
   <script>
-async function acceptInvite(invitationCode){
 
-const response = await fetch('/api/accept-invite/'+ invitationCode, {
-  method: 'POST'
-});
-//location.href = "/receive-love"  
+async function subscribeToNotifications(webpush_key, invitationCode) {
+  var sw = await navigator.serviceWorker.ready;
+  var push = await sw.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: webpush_key
+  });
+  fetch("/api/user", {
+    method: "POST",
+    body: JSON.stringify(push),
+    headers: { "Content-Type": "application/json" }
+  }).then(() =>{
+    console.info("sucessfully subscribed to web push notifications!");
+    return acceptInvite(invitationCode);
+  }).then(()=>{
+  location.href = "/receive-love"
+  })
+  .catch((error)=>{
+    alert('error');
+    console.log(error);
+  });
 }
 
+function acceptInvite(invitationCode){ 
+return fetch('/api/accept-invite/'+ invitationCode, {
+  method: 'POST'});
 
+}
   </script>
 </body>
 
