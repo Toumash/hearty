@@ -13,29 +13,13 @@ require("dotenv").config({ path: `.env.${environment}` });
 const PORT = process.env.PORT || 3000;
 const PUBLIC_URL = "http://localhost:" + PORT;
 
-push.setVapidDetails(
-  "mailto:hearty@example.com",
-  process.env.VAPID_PUB,
-  process.env.VAPID_PRIV
-);
+push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
-let cachedDb = null;
-async function connectToDatabase(uri) {
-  if (cachedDb) return cachedDb;
-
-  const client = await MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  });
-  const db = await client.db("test");
-  cachedDb = db;
-  return db;
-}
-const guid = () => uuid.v4();
 
 let db = { user: {} };
 const getUserId = (req) => req.cookies.user;
 const getUser = (req) => db.user[getUserId(req)];
+const guid = () => uuid.v4();
 
 const server = express()
   .use(express.json())
@@ -89,22 +73,7 @@ const server = express()
     // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
   })
-  .get('/user/accept-invite/:invitationCode', (req, res) => {
-    let invitationCode = req.params.invitationCode;
-    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
-    if (userId == null) {
-      res.status(404)
-        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
-        .end();
-      return;
-    }
 
-    res.render("pages/accept-invite", {
-      userId: req.cookies.user,
-      webpush_key: process.env.VAPID_PUB,
-      invitationCode: invitationCode
-    });
-  })
   .post("/api/user", (req, res) => {
     // it will always overwrite prevous subscription
     let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };
@@ -123,13 +92,8 @@ const server = express()
     res.json(db);
   })
   .get("/", (req, res) => {
-    let user = req.cookies.user;
-    if (!user) {
-      user = guid();
-      res.cookie("user", user);
-    }
     res.render("pages/index", {
-      userId: user,
+      userId: req.cookies.user,
       webpush_key: process.env.VAPID_PUB
     });
   })
@@ -145,6 +109,22 @@ const server = express()
     res.render("pages/receive-love", {
       userId: req.cookies.user,
       webpush_key: process.env.VAPID_PUB
+    });
+  })
+  .get('/user/accept-invite/:invitationCode', (req, res) => {
+    let invitationCode = req.params.invitationCode;
+    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
+    if (userId == null) {
+      res.status(404)
+        .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
+        .end();
+      return;
+    }
+
+    res.render("pages/accept-invite", {
+      userId: req.cookies.user,
+      webpush_key: process.env.VAPID_PUB,
+      invitationCode: invitationCode
     });
   })
   .use(express.static("public"))
