@@ -1,6 +1,5 @@
 "use strict";
 
-const MongoClient = require("mongodb").MongoClient;
 const express = require("express");
 const socketIO = require("socket.io");
 const push = require("web-push");
@@ -12,7 +11,6 @@ require("dotenv").config({ path: `.env.${environment}` });
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_URL = "http://localhost:" + PORT;
-
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
 
@@ -73,7 +71,6 @@ const server = express()
     // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
   })
-
   .post("/api/user", (req, res) => {
     // it will always overwrite prevous subscription
     let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };

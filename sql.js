@@ -1,3 +1,4 @@
+const MongoClient = require("mongodb").MongoClient;
 export async function connectToDatabase(uri) {
     if (cachedDb) return cachedDb;
   
