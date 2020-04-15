@@ -10,7 +10,7 @@ let environment = process.env.NODE_ENV || "dev";
 require("dotenv").config({ path: `.env.${environment}` });
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_URL = "http://localhost:" + PORT;
+const PUBLIC_URL = process.env.PUBLIC_URL || "http://localhost:" + PORT;
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
 
