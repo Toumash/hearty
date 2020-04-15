@@ -56,7 +56,9 @@
       <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to
         notifications</button>
       <button id="generateLink" onclick="generateLink()">Generate invite link</button>
-      <p>Invitation link: <span id="inviteCode"></span></p>
+      <button id="cp_btn">Copy</button>
+      <p> Invitation link: <span id="inviteCode" class="password-span"></span></p>
+       
       <div class="col-lg-12 text-center">
         <h1 class="mt-5">Send love to the loved one</h1>
       </div>
@@ -114,6 +116,18 @@
     async function sendLove() {
       const response = await fetch('/api/send-love', { method: 'POST' });
     }
+
+    document.getElementById("cp_btn").addEventListener("click", copy_link);
+ 
+    function copy_link() {
+    var copyText = document.getElementById("inviteCode");
+    var textArea = document.createElement("textarea");
+    textArea.value = copyText.textContent;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("Copy");
+    textArea.remove();
+}
 
   </script>
 
