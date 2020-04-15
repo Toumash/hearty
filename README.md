@@ -29,6 +29,7 @@ npm start
 ```
 heroku create
 heroku features:enable http-session-affinity
+heroku config:set PUBLIC_URL=xxx PORT=80 VAPID_PRIV=xxx VAPID_PUB=xxx
 git push heroku master
 ```
 
