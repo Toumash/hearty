@@ -14,46 +14,51 @@ const PUBLIC_URL = "http://localhost:" + PORT;
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
 
-let db = { user: { "test": { subscription: {},partnerId:'alicja'} } };
-const getUserId = (req) => req.cookies.user;
-const getUser = (req) => db.user[getUserId(req)];
+let db = { user: { "test": { subscription: {}, partnerId: 'alicja' } } };
 const guid = () => uuid.v4();
 const auth = (req, res, next) => {
-  let user = getUser(req);
-  if (!user) {
+  if (!res.locals.user) {
     return res.status(401).end();
   }
-  res.locals.user = user;
   next();
 }
 
 const server = express()
+  .use(express.static("public"))
   .use(express.json())
   .set("view engine", "ejs")
   .use(cookieParser())
   .get("/api/healthz/readiness", (req, res) => res.status(200).json({ status: "ok" }).end())
   .use((req, res, next) => {
-    if (!req.cookies.user)
-      res.cookie("user", guid());
+    if (!req.cookies.user || !db.user[req.cookies.user]) {
+      let userId = guid();
+      res.cookie("user", userId);
+      res.locals.userId = userId;
+      db.user[userId] = { subscription: null, inviteCode: null, partnerId: null };
+    } else {
+      res.locals.userId = req.cookies.user;
+    }
+    res.locals.user = db.user[res.locals.userId];
+
     next()
   })
   .get('/api/user/invite-link', [auth, (req, res) => {
     let inviteCode = '';
-    if (!getUser(req).inviteCode)
+    if (!res.locals.user.inviteCode)
       inviteCode = Buffer.from(guid()).toString('base64');
     else
-      inviteCode = getUser(req).inviteCode;
+      inviteCode = res.locals.user.inviteCode;
 
     let inviteLink = PUBLIC_URL + '/user/accept-invite/' + inviteCode;
 
-    let user = getUser(req);
+    let user = db.user[res.locals.userId];
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
   }])
   .post('/api/accept-invite/:invitationCode', [auth, (req, res) => {
-    let currentUser = getUser(req);
+    let currentUser = res.locals.user;
     console.log('hello,', currentUser)
-    let currentUserId = getUserId(req);
+    let currentUserId = res.locals.userId;
     let invitationCode = req.params.invitationCode;
 
     if (currentUser.inviteCode == invitationCode) {
@@ -78,20 +83,20 @@ const server = express()
       return res.status(404).json({ status: 'error', message: 'partner not found' }).end();
   }])
   .post("/api/user", (req, res) => {
-    // it will always overwrite prevous subscription
-    let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };
+    let user = db.user[res.locals.userId];
     user.subscription = req.body;
-    db.user[getUserId(req)] = user;
+    db.user[res.locals.userId] = user;
     res.status(201).end();
   })
   .get("/", (req, res) => {
     res.render("pages/index", {
       userId: req.cookies.user,
-      webpush_key: process.env.VAPID_PUB
+      webpush_key: process.env.VAPID_PUB,
+      hasPartner: res.locals.user.partnerId != null
     });
   })
   .post('/api/send-love', [auth, (req, res) => {
-    let user = getUser(req);
+    let user = res.locals.user;
     let partner = db.user[user.partnerId];
     if (partner == null) { return res.status(400).json({ status: 'error', message: 'no partner found for this user' }).end(); }
     let pushNotifySubscriptionKeys = partner.subscription;
@@ -127,7 +132,6 @@ const server = express()
     }
     res.json(db);
   })
-  .use(express.static("public"))
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
 
 const io = socketIO(server);
