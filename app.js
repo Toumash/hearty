@@ -14,29 +14,23 @@ const PUBLIC_URL = "http://localhost:" + PORT;
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
 
-let db = { user: {} };
+let db = { user: { "test": { subscription: {} } } };
 const getUserId = (req) => req.cookies.user;
 const getUser = (req) => db.user[getUserId(req)];
 const guid = () => uuid.v4();
+const auth = (req, res, next) => { if (!getUser(req)) { return res.status(401).end(); } next() }
 
 const server = express()
   .use(express.json())
   .set("view engine", "ejs")
   .use(cookieParser())
-  .get("/api/healthz/readiness", (req, res) => {
-    res.status(200).json({ status: "ok" });
-  })
-  .use(function (req, res, next) {
-    let user = req.cookies.user;
-    if (!user) {
-      user = guid();
-      res.cookie("user", user);
-    }
+  .get("/api/healthz/readiness", (req, res) => res.status(200).json({ status: "ok" }).end())
+  .use((req, res, next) => {
+    if (!req.cookies.user)
+      res.cookie("user", guid());
     next()
   })
-  .get('/api/user/invite-link', (req, res) => {
-    if (!getUser(req)) { return res.status(401).end(); }
-
+  .get('/api/user/invite-link', [auth, (req, res) => {
     let inviteCode = '';
     if (!getUser(req).inviteCode)
       inviteCode = Buffer.from(guid()).toString('base64');
@@ -48,9 +42,8 @@ const server = express()
     let user = getUser(req);
     user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
-  })
-  .post('/api/accept-invite/:invitationCode', (req, res) => {
-    if (!getUser(req)) { return res.status(401).end(); }
+  }])
+  .post('/api/accept-invite/:invitationCode', [auth, (req, res) => {
     let currentUser = getUser(req);
     console.log('hello,', currentUser)
     let currentUserId = getUserId(req);
@@ -70,7 +63,7 @@ const server = express()
     currentUser.partnerId = partnerUserId;
     // TOOD: signalr emit paired event
     res.status(201).json({ status: 'ok' }).end();
-  })
+  }])
   .post("/api/user", (req, res) => {
     // it will always overwrite prevous subscription
     let user = db.user[getUserId(req)] || { subscription: null, inviteCode: null, partnerId: null };
@@ -78,30 +71,20 @@ const server = express()
     db.user[getUserId(req)] = user;
     res.status(201).end();
   })
-  .get("/api/user", async (req, res) => {
-    const db = await connectToDatabase(process.env.MONGODB_URI);
-    const collection = await db.collection("users");
-    const users = await collection.find({}).toArray();
-    res.status(200).json({ users });
-  })
-  .get("/api/db", (req, res) => {
-    if (!getUser(req)) { return res.status(401).end(); }
-    res.json(db);
-  })
   .get("/", (req, res) => {
     res.render("pages/index", {
       userId: req.cookies.user,
       webpush_key: process.env.VAPID_PUB
     });
   })
-  .post('/api/send-love', (req, res) => {
+  .post('/api/send-love', [auth, (req, res) => {
     let user = getUser(req);
-    if (!user) { return res.status(401).end(); }
     let partner = db.user[user.partnerId];
+    if (partner == null) { return res.status(400).json({ status: 'error', message: 'no partner found for this user' }).end(); }
     let pushNotifySubscriptionKeys = partner.subscription;
     push.sendNotification(pushNotifySubscriptionKeys);
     res.status(201).json({ status: 'ok', description: 'message sent!' }).end();
-  })
+  }])
   .get("/receive-love", (req, res) => {
     res.render("pages/receive-love", {
       userId: req.cookies.user,
@@ -123,6 +106,13 @@ const server = express()
       webpush_key: process.env.VAPID_PUB,
       invitationCode: invitationCode
     });
+  })
+  .get("/api/db", (req, res) => {
+    if (environment !== 'dev') {
+      res.status(403).json({ status: 'error', message: 'database is only accessible in dev environment' }).end();
+      return;
+    }
+    res.json(db);
   })
   .use(express.static("public"))
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
