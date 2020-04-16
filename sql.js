@@ -1,5 +1,8 @@
 const MongoClient = require("mongodb").MongoClient;
-export async function connectToDatabase(uri) {
+
+let cachedDb = null;
+
+async function connectToDatabase(uri) {
   if (cachedDb) return cachedDb;
 
   const client = await MongoClient.connect(uri, {
@@ -10,9 +13,27 @@ export async function connectToDatabase(uri) {
   cachedDb = db;
   return db;
 }
-
-export async function getAllUsers() {
+async function users() {
   const db = await connectToDatabase(process.env.MONGODB_URI);
   const collection = await db.collection("users");
-  return await collection.find({}).toArray();
+  return collection;
+}
+
+async function getUser(id) {
+  const users = await users();
+  return await users.find({ _id: id }).toArray().shift();
+}
+async function getAllUsers() {
+  const users = await users();
+  return await users.find({}).toArray();
+}
+
+async function addUser(user) {
+  const users = await users();
+  return await users.insertOne(user);
+}
+
+async function updateUser(user) {
+  const users = await users();
+  return await users.replaceOne({ _id: user.id }, user);
 }

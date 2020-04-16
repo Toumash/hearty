@@ -5,6 +5,7 @@ const socketIO = require("socket.io");
 const push = require("web-push");
 const uuid = require("uuid");
 const cookieParser = require("cookie-parser");
+const sql = require('./sql');
 
 let environment = process.env.NODE_ENV || "dev";
 require("dotenv").config({ path: `.env.${environment}` });
