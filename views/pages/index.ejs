@@ -58,7 +58,9 @@
       <button id="generateLink" onclick="generateLink()">Generate invite link</button>
       <button id="cp_btn">Copy</button>
       <p> Invitation link: <span id="inviteCode" class="password-span"></span></p>
-       
+
+      <button id="getStatus" onclick="getStatus('<%= hasPartner %>')">Get invitation status</button>
+      <p> Invitation status: <span id="inviteStatus"></span></p>
       <div class="col-lg-12 text-center">
         <h1 class="mt-5">Send love to the loved one</h1>
       </div>
@@ -128,7 +130,10 @@
     document.execCommand("Copy");
     textArea.remove();
 }
+  async function getStatus(hasPartner){
 
+  document.getElementById("inviteStatus").innerHTML = hasPartner;
+}
   </script>
 
 </body>
