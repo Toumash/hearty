@@ -90,7 +90,7 @@ const server = express()
   })
   .get("/", (req, res) => {
     res.render("pages/index", {
-      userId: req.cookies.user,
+      userId: res.locals.userId,
       webpush_key: process.env.VAPID_PUB,
       hasPartner: res.locals.user.partnerId != null
     });
@@ -105,7 +105,7 @@ const server = express()
   }])
   .get("/receive-love", (req, res) => {
     res.render("pages/receive-love", {
-      userId: req.cookies.user,
+      userId: res.locals.userId,
       webpush_key: process.env.VAPID_PUB
     });
   })
@@ -120,7 +120,7 @@ const server = express()
     }
 
     res.render("pages/accept-invite", {
-      userId: req.cookies.user,
+      userId: res.locals.userId,
       webpush_key: process.env.VAPID_PUB,
       invitationCode: invitationCode
     });
