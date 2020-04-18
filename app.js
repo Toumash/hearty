@@ -40,7 +40,16 @@ const server = express()
     } else {
       res.locals.userId = req.cookies.user;
     }
-    if (dbUser == null) dbUser = await sql.getUser(res.locals.userId);
+    if (dbUser == null) {
+      dbUser = await sql.getUser(res.locals.userId);
+      if (dbUser == null) {
+        let userId = guid();
+        res.cookie("user", userId);
+        res.locals.userId = userId;
+        dbUser = { subscription: null, inviteCode: null, partnerId: null, _id: userId };
+        sql.addUser(dbUser);
+      }
+    }
     res.locals.user = dbUser;
 
     next()
@@ -70,7 +79,8 @@ const server = express()
       return;
     }
 
-    let partnerUser = sql.getAllUsers().find(u => u.invitationCode == invitationCode);
+    let users = await sql.getAllUsers();
+    let partnerUser = users.find(u => u.invitationCode == invitationCode);
     if (partnerUser == null) {
       res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
       return;
@@ -121,7 +131,8 @@ const server = express()
   .get('/user/accept-invite/:invitationCode', async (req, res) => {
     let inviteCode = req.params.invitationCode;
 
-    let user = sql.getAllUsers().find(u => u.inviteCode == inviteCode);
+    let users = await sql.getAllUsers();
+    let user = users.find(u => u.inviteCode == inviteCode);
     if (user == null) {
       res.status(404)
         .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
