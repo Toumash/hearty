@@ -13,6 +13,13 @@ async function connectToDatabase(uri) {
   cachedDb = db;
   return db;
 }
+
+async function get_events() {
+  const db = await connectToDatabase(process.env.MONGODB_URI);
+  const collection = await db.collection("events");
+  return collection;
+}
+
 async function get_users() {
   const db = await connectToDatabase(process.env.MONGODB_URI);
   const collection = await db.collection("users");
@@ -38,4 +45,11 @@ async function updateUser(user) {
   return await users.replaceOne({ _id: user._id }, user);
 }
 
-module.exports = { connectToDatabase, get_users, getUser, getAllUsers, addUser, updateUser };
+async function logEvent(eventType, message) {
+  const events = await get_events();
+  await events.insertOne({ type: eventType, message: message, date: new Date() });
+}
+
+module.exports = {
+  connectToDatabase, get_users, getUser, getAllUsers, addUser, updateUser, logEvent
+};

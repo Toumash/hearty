@@ -120,6 +120,7 @@ const server = express()
     if (partner == null) { return res.status(400).json({ status: 'error', message: 'no partner found for this user' }).end(); }
     let pushNotifySubscriptionKeys = partner.subscription;
     push.sendNotification(pushNotifySubscriptionKeys);
+    await sql.logEvent('LOVE_SENT', `user ${user._id} sent a love letter to ${partner._id}`);
     res.status(201).json({ status: 'ok', description: 'message sent!' }).end();
   }])
   .get("/receive-love", (req, res) => {
