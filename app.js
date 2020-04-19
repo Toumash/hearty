@@ -8,13 +8,13 @@ const cookieParser = require("cookie-parser");
 
 let environment = process.env.NODE_ENV || "dev";
 require("dotenv").config({ path: `.env.${environment}` });
+const sql = require('./sql');
+
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_URL = process.env.PUBLIC_URL || "http://localhost:" + PORT;
 push.setVapidDetails("mailto:hearty@example.com", process.env.VAPID_PUB, process.env.VAPID_PRIV);
 
-
-let db = { user: { "test": { subscription: {}, partnerId: 'alicja' } } };
 const guid = () => uuid.v4();
 const auth = (req, res, next) => {
   if (!res.locals.user) {
@@ -29,33 +29,46 @@ const server = express()
   .set("view engine", "ejs")
   .use(cookieParser())
   .get("/api/healthz/readiness", (req, res) => res.status(200).json({ status: "ok" }).end())
-  .use((req, res, next) => {
-    if (!req.cookies.user || !db.user[req.cookies.user]) {
+  .use(async (req, res, next) => {
+    let dbUser = null;
+    if (!req.cookies.user) {
       let userId = guid();
       res.cookie("user", userId);
       res.locals.userId = userId;
-      db.user[userId] = { subscription: null, inviteCode: null, partnerId: null };
+      dbUser = { subscription: null, inviteCode: null, partnerId: null, _id: userId };
+      sql.addUser(dbUser);
     } else {
       res.locals.userId = req.cookies.user;
     }
-    res.locals.user = db.user[res.locals.userId];
+    if (dbUser == null) {
+      dbUser = await sql.getUser(res.locals.userId);
+      if (dbUser == null) {
+        let userId = guid();
+        res.cookie("user", userId);
+        res.locals.userId = userId;
+        dbUser = { subscription: null, inviteCode: null, partnerId: null, _id: userId };
+        sql.addUser(dbUser);
+      }
+    }
+    res.locals.user = dbUser;
 
     next()
   })
-  .get('/api/user/invite-link', [auth, (req, res) => {
+  .get('/api/user/invite-link', [auth, async (req, res) => {
     let inviteCode = '';
-    if (!res.locals.user.inviteCode)
+    if (!res.locals.user.inviteCode) {
       inviteCode = Buffer.from(guid()).toString('base64');
+      let user = res.locals.user;
+      user.inviteCode = inviteCode;
+      await sql.updateUser(user);
+    }
     else
       inviteCode = res.locals.user.inviteCode;
 
     let inviteLink = PUBLIC_URL + '/user/accept-invite/' + inviteCode;
-
-    let user = db.user[res.locals.userId];
-    user.inviteCode = inviteCode;
     res.json({ inviteLink: inviteLink, inviteCode: inviteCode }).end();
   }])
-  .post('/api/accept-invite/:invitationCode', [auth, (req, res) => {
+  .post('/api/accept-invite/:invitationCode', [auth, async (req, res) => {
     let currentUser = res.locals.user;
     console.log('hello,', currentUser)
     let currentUserId = res.locals.userId;
@@ -66,13 +79,18 @@ const server = express()
       return;
     }
 
-    let partnerUserId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
-    if (partnerUserId == null) {
+    let users = await sql.getAllUsers();
+    let partnerUser = users.find(u => u.invitationCode == invitationCode);
+    if (partnerUser == null) {
       res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
       return;
     }
-    db.user[partnerUserId].partnerId = currentUserId;
-    currentUser.partnerId = partnerUserId;
+    let partnerUserId = partneerUser._id;
+    let user = res.locals.user;
+    user.partnerId = partnerUserId;
+    await sql.updateUser(user);
+    partnerUser.partnerId = currentUserId;
+    await sql.getUser(partnerUser);
     res.status(201).json({ status: 'ok' }).end();
   }])
   .get('/api/partner', [auth, (req, res) => {
@@ -83,9 +101,9 @@ const server = express()
       return res.status(404).json({ status: 'error', message: 'partner not found' }).end();
   }])
   .post("/api/user", (req, res) => {
-    let user = db.user[res.locals.userId];
+    let user = res.locals.user;
     user.subscription = req.body;
-    db.user[res.locals.userId] = user;
+    sql.updateUser(user);
     res.status(201).end();
   })
   .get("/", (req, res) => {
@@ -95,12 +113,14 @@ const server = express()
       hasPartner: res.locals.user.partnerId != null
     });
   })
-  .post('/api/send-love', [auth, (req, res) => {
+  .post('/api/send-love', [auth, async (req, res) => {
     let user = res.locals.user;
-    let partner = db.user[user.partnerId];
+    let users = await sql.getAllUsers();
+    let partner = users.find(u => u.partnerId == user.partnerId);
     if (partner == null) { return res.status(400).json({ status: 'error', message: 'no partner found for this user' }).end(); }
     let pushNotifySubscriptionKeys = partner.subscription;
     push.sendNotification(pushNotifySubscriptionKeys);
+    await sql.logEvent('LOVE_SENT', `user ${user._id} sent a love letter to ${partner._id}`);
     res.status(201).json({ status: 'ok', description: 'message sent!' }).end();
   }])
   .get("/receive-love", (req, res) => {
@@ -109,10 +129,12 @@ const server = express()
       webpush_key: process.env.VAPID_PUB
     });
   })
-  .get('/user/accept-invite/:invitationCode', (req, res) => {
-    let invitationCode = req.params.invitationCode;
-    let userId = Object.keys(db.user).find(userId => db.user[userId].inviteCode == invitationCode);
-    if (userId == null) {
+  .get('/user/accept-invite/:invitationCode', async (req, res) => {
+    let inviteCode = req.params.invitationCode;
+
+    let users = await sql.getAllUsers();
+    let user = users.find(u => u.inviteCode == inviteCode);
+    if (user == null) {
       res.status(404)
         .json({ status: 'error', messsage: 'Invitation link already used or does not exist' })
         .end();
@@ -122,15 +144,15 @@ const server = express()
     res.render("pages/accept-invite", {
       userId: res.locals.userId,
       webpush_key: process.env.VAPID_PUB,
-      invitationCode: invitationCode
+      inviteCode: inviteCode
     });
   })
-  .get("/api/db", (req, res) => {
+  .get("/api/db", async (req, res) => {
     if (environment !== 'dev') {
       res.status(403).json({ status: 'error', message: 'database is only accessible in dev environment' }).end();
       return;
     }
-    res.json(db);
+    res.json(await sql.getAllUsers());
   })
   .listen(PORT, () => console.log(`Started http://localhost:${PORT}`));
 
