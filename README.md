@@ -16,6 +16,16 @@ This app for lovers has only one goal: to make each other happier by telling the
 
 ## How to run?
 
+### Requirements
+`mongodb` installed somewhere.
+
+I personally recommend installing it using docker.
+If you are running mongodb in another location - please change .env file accordingly
+
+```
+docker run --network=host -p 27017:27017 mongo
+```
+
 ```
 npm install
 npm start
