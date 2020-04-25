@@ -53,21 +53,18 @@
   <!-- Page Content -->
   <div class="container">
     <div class="">
-      <button id="subscribe" onclick="subscribeToNotifications('<%= webpush_key %>')">Subscribe to
-        notifications</button>
-      <button id="generateLink" onclick="generateLink()">Generate invite link</button>
-      <button id="cp_btn">Copy</button>
-      <p> Invitation link: <span id="inviteCode" class="password-span"></span></p>
 
-      <button id="getStatus" onclick="getStatus('<%= hasPartner %>')">Get invitation status</button>
-      <p> Invitation status: <span id="inviteStatus"></span></p>
+
+     <!-- <button id="getStatus" onclick="getStatus('<%= hasPartner %>')">Get invitation status</button>
+     <p> Invitation status: <span id="inviteStatus"></span></p> --> 
       <div class="col-lg-12 text-center">
-        <h1 class="mt-5">Send love to the loved one</h1>
+
+        <h1 class="mt-5">Let them know</h1>
       </div>
       <div id="nameInput" style="text-align:center">
         <form action="/action_page.php">
           <label for="fname"></label>
-          <input type="text" placeholder="To:" id="fname" name="fname" size="7"><br><br>
+        <!--  <input type="text" placeholder="To:" id="fname" name="fname" size="7"><br><br> -->
         </form>
       </div>
       <div id="emptyHeart" class="filled" style="text-align:center">
@@ -80,8 +77,14 @@
                  Q 10,60 10,30 z" />
           </svg>
         </span>
-        <button onclick="heartShape.classList.toggle('hoveron');sendLove();">Send love</button>
+              
+        <button id="generateLink" onclick="generateLink()">Copy invitation</button>
+        <p class="hide">  <span id="inviteCode" class="password-span"></span></p>
+      
+  
+        <button onclick="subscribeToNotifications('<%= webpush_key %>');heartShape.classList.toggle('hoveron');sendLove();">Send love</button>
         </form>
+        
       </div>
       <%- include('partials/user_info') %>
     </div>
@@ -114,6 +117,14 @@
       const inviteCode = myJson.inviteLink;
       console.log(inviteCode);
       document.getElementById("inviteCode").innerHTML = inviteCode;
+      var copyText = document.getElementById("inviteCode");
+      var textArea = document.createElement("textarea");
+      textArea.value = copyText.textContent;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("Copy");
+      textArea.remove();
+
     }
 
     async function sendLove() {
