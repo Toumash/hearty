@@ -17,6 +17,11 @@ html {
   line-height: 1.4;
 }
 
+.hide {
+  position:absolute;
+  left:-9999px
+}
+
 /*
  * Remove text-shadow in selection highlight:
  * https://twitter.com/miketaylr/status/12228805301
