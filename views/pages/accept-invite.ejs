@@ -114,7 +114,7 @@
       })
         .then(() => fetch('/api/accept-invite/' + invitationCode, { method: 'POST' }))
         .then((response) => {
-          if (response.status !== 200)
+          if (response.status !== 201)
             throw new Error("Error connecting with partner!")
 
           location.href = "/receive-love"
