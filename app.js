@@ -80,17 +80,17 @@ const server = express()
     }
 
     let users = await sql.getAllUsers();
-    let partnerUser = users.find(u => u.invitationCode == invitationCode);
+    let partnerUser = users.find(u => u.inviteCode == invitationCode);
     if (partnerUser == null) {
       res.status(404).json({ status: 'error', message: 'invitation code does not exist in the database' }).end();
       return;
     }
-    let partnerUserId = partneerUser._id;
+    let partnerUserId = partnerUser._id;
     let user = res.locals.user;
     user.partnerId = partnerUserId;
     await sql.updateUser(user);
     partnerUser.partnerId = currentUserId;
-    await sql.getUser(partnerUser);
+    await sql.updateUser(partnerUser);
     res.status(201).json({ status: 'ok' }).end();
   }])
   .get('/api/partner', [auth, (req, res) => {
