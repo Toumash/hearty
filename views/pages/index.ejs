@@ -78,13 +78,11 @@
           </svg>
         </span>
 
-        <button id="generateLink" onclick="generateLink()">Copy invitation</button>
-        <p class="hide"> <span id="inviteCode" class="password-span"></span></p>
-
-
         <button
-          onclick="subscribeToNotifications('<%= webpush_key %>');heartShape.classList.toggle('hoveron');sendLove();">Send
+          onclick="subscribeToNotifications('<%= webpush_key %>',()=>{generateLink();sendLove();heartShape.classList.toggle('hoveron');});">Send
           love</button>
+        <br />
+        <span id="inviteCode" class="password-span"></span>
         </form>
 
       </div>
@@ -99,56 +97,43 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
   <scriot src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js">
-  </script>
-  <script src="/js/plugins.js"></script>
-  <script src="/js/heart.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/main.js"></script>
+    </script>
+    <script src="/js/plugins.js"></script>
+    <script src="/js/heart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
 
-  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
-  <script>
-    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
-    ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
-  </script>
-  <script src="https://www.google-analytics.com/analytics.js" async></script>
+    <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+    <script>
+      window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
+      ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
+    </script>
+    <script src="https://www.google-analytics.com/analytics.js" async></script>
 
-  <script>
-    async function generateLink() {
-      const response = await fetch('/api/user/invite-link');
-      const myJson = await response.json();
-      const inviteCode = myJson.inviteLink;
-      console.log(inviteCode);
-      document.getElementById("inviteCode").innerHTML = inviteCode;
-      var copyText = document.getElementById("inviteCode");
-      var textArea = document.createElement("textarea");
-      textArea.value = copyText.textContent;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("Copy");
-      textArea.remove();
+    <script>
+      async function generateLink() {
+        const response = await fetch('/api/user/invite-link');
+        const myJson = await response.json();
+        const inviteCode = myJson.inviteLink;
+        console.log(inviteCode);
+        document.getElementById("inviteCode").innerHTML = inviteCode;
+        var copyText = document.getElementById("inviteCode");
+        var textArea = document.createElement("textarea");
+        textArea.value = copyText.textContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("Copy");
+        textArea.remove();
+      }
 
-    }
+      async function sendLove() {
+        const response = await fetch('/api/send-love', { method: 'POST' });
+      }
 
-    async function sendLove() {
-      const response = await fetch('/api/send-love', { method: 'POST' });
-    }
-
-    document.getElementById("cp_btn").addEventListener("click", copy_link);
-
-    function copy_link() {
-      var copyText = document.getElementById("inviteCode");
-      var textArea = document.createElement("textarea");
-      textArea.value = copyText.textContent;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("Copy");
-      textArea.remove();
-    }
-    async function getStatus(hasPartner) {
-
-      document.getElementById("inviteStatus").innerHTML = hasPartner;
-    }
-  </script>
+      async function getStatus(hasPartner) {
+        document.getElementById("inviteStatus").innerHTML = hasPartner;
+      }
+    </script>
 
 </body>
 

@@ -104,6 +104,7 @@ const server = express()
     let user = res.locals.user;
     user.subscription = req.body;
     sql.updateUser(user);
+    console.log('updated user', user);
     res.status(201).end();
   })
   .get("/", (req, res) => {
