@@ -77,9 +77,7 @@
                  Q 10,60 10,30 z" />
           </svg>
         </span>
-
-        <button
-          onclick="subscribeToNotifications('<%= webpush_key %>',()=>{generateLink();sendLove();heartShape.classList.toggle('hoveron');});">Send
+        <button id="send-button">Send
           love</button>
         <br />
         <span id="inviteCode" class="password-span"></span>
@@ -109,8 +107,26 @@
       ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
     </script>
     <script src="https://www.google-analytics.com/analytics.js" async></script>
-
     <script>
+      var btn = $('#send-button');
+      var hasPartner = '<%= hasPartner %>' == 'true';
+      var webpushKey = '<%= webpush_key %>';
+      if (hasPartner) {
+        btn.text("Send love");
+      } else {
+        btn.text("Copy invite link");
+      }
+
+      btn.click(function () {
+        subscribeToNotifications(webpushKey, function () {
+          if (hasPartner) {
+            sendLove();
+            heartShape.classList.toggle('hoveron');
+          } else {
+            generateLink();
+          }
+        })
+      });
       async function generateLink() {
         const response = await fetch('/api/user/invite-link');
         const myJson = await response.json();
@@ -128,10 +144,6 @@
 
       async function sendLove() {
         const response = await fetch('/api/send-love', { method: 'POST' });
-      }
-
-      async function getStatus(hasPartner) {
-        document.getElementById("inviteStatus").innerHTML = hasPartner;
       }
     </script>
 
